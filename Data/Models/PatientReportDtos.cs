@@ -109,4 +109,28 @@ namespace Data.Models
         public List<SelectDropDownList>? Drop_List { get; set; }
         public string? Drop_Options { get; set; }
     }
+
+    public class P_Get_UserReportRight_List
+    {
+        public int RowNo { get; set; }
+        public int URR_ID { get; set; }
+        public string Ery_URR_ID
+        {
+            get
+            {
+                return Crypto.EncryptNumericToStringWithOutNull(URR_ID);
+            }
+        }
+        public int RT_ID { get; set; }
+        public string? UserId { get; set; }
+        public string? ReportName { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class P_UserReportRight_Response
+    {
+        public int URR_ID { get; set; }
+        public string? UserId { get; set; }
+        public int RT_ID { get; set; }
+    }
 }

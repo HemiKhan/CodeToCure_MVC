@@ -2,14 +2,10 @@
 using Data.DataAccess;
 using Data.Dtos;
 using Data.Models;
-using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Services.PatientReportServices;
-using System.Web;
 using static CodeToCure_MVC.Models.ModalDtos;
 using static CodeToCure_MVC.Models.MVCAppEnum;
 using static Data.Dtos.CustomClasses;
@@ -36,6 +32,7 @@ namespace CodeToCure_MVC.Controllers
         }
         #endregion Constructor
 
+        #region Patient Report 
         public IActionResult Index()
         {
             ViewBag.UserName = _PublicClaimObjects.username;
@@ -50,7 +47,7 @@ namespace CodeToCure_MVC.Controllers
             try
             {
                 List<Dynamic_SP_Params> List_Dynamic_SP_Params = new List<Dynamic_SP_Params>();
-                ModalFunctions.GetKendoFilter(ref _ReportParams, ref List_Dynamic_SP_Params, _PublicClaimObjects, true);
+                ModalFunctions.GetKendoFilter(ref _ReportParams, ref List_Dynamic_SP_Params, _PublicClaimObjects!, true);
 
                 List<P_Get_PatientReport_List> ResultList = StaticPublicObjects.ado.P_Get_Generic_List_SP<P_Get_PatientReport_List>("P_Get_PatientReport_List", ref List_Dynamic_SP_Params);
 
@@ -236,7 +233,7 @@ namespace CodeToCure_MVC.Controllers
                 htmlString += "</div>";
                 htmlString += "</div>";
 
-                htmlString += "<div class='row'>";                
+                htmlString += "<div class='row'>";
                 htmlString += "<div class='col-lg-4 col-md-4 col-sm-4'>";
                 htmlString += "<div class='form-floating mb-3'>";
                 htmlString += "<input type='text' class='form-control' id='ReportTitle' placeholder='Report Title'>";
@@ -365,6 +362,174 @@ namespace CodeToCure_MVC.Controllers
             Html += "</tr>";
             return Html;
         }
+        #endregion Patient Report 
+
+        #region Rights 
+        public IActionResult ReportRights()
+        {
+            ViewBag.UserName = _PublicClaimObjects!.username;
+            ViewBag.GUID = Guid.NewGuid().ToString().ToLower();
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult GetFilterData_UserReportRights_List([FromBody] ReportParams _ReportParams)
+        {
+            ReportResponse reportResponse = new ReportResponse();
+            try
+            {
+                List<Dynamic_SP_Params> List_Dynamic_SP_Params = new List<Dynamic_SP_Params>();
+                ModalFunctions.GetKendoFilter(ref _ReportParams, ref List_Dynamic_SP_Params, _PublicClaimObjects!, true);
+
+                List<P_Get_UserReportRight_List> ResultList = StaticPublicObjects.ado.P_Get_Generic_List_SP<P_Get_UserReportRight_List>("P_Get_UserReportRight_List", ref List_Dynamic_SP_Params);
+
+                reportResponse.TotalRowCount = ModalFunctions.GetValueFromReturnParameter<long>(List_Dynamic_SP_Params, "TotalRowCount", typeof(long));
+                reportResponse.ResultData = ResultList;
+                reportResponse.response_code = true;
+            }
+            catch (Exception ex)
+            {
+                StaticPublicObjects.logFile.ErrorLog(FunctionName: "GetFilterData_UserReportRights_List", SmallMessage: ex.Message, Message: ex.ToString());
+                reportResponse.TotalRowCount = 0;
+                reportResponse.ResultData = null;
+                reportResponse.response_code = false;
+            }
+            return Globals.GetAjaxJsonReturn(reportResponse);
+        }
+
+        [HttpPost]
+        public string GetAddEditReportRightsModal([FromBody] string Ery_URR_ID)
+        {
+            int Modal_ID = Crypto.DecryptNumericToStringWithOutNull(Ery_URR_ID);
+            string HtmlString = "";
+
+            GetModalDetail getModalDetail = new GetModalDetail();
+            List<ModalBodyTypeInfo> List_ModalBodyTypeInfo = new List<ModalBodyTypeInfo>();
+            ModalBodyTypeInfo modalBodyTypeInfo = new ModalBodyTypeInfo();
+
+            P_UserReportRight_Response ModalEdit = new P_UserReportRight_Response();
+            if (Modal_ID > 0)
+            {
+                List<Dynamic_SP_Params> List_Dynamic_SP_Params = new List<Dynamic_SP_Params>();
+                Dynamic_SP_Params Dynamic_SP_Params = new Dynamic_SP_Params();
+                Dynamic_SP_Params.ParameterName = "URR_ID";
+                Dynamic_SP_Params.Val = Modal_ID;
+                List_Dynamic_SP_Params.Add(Dynamic_SP_Params);
+                ModalEdit = StaticPublicObjects.ado.ExecuteSelectSQLMap<P_UserReportRight_Response>("SELECT URR_ID,UserId,RT_ID FROM [AAMH].[dbo].[T_User_Report_Rights] WITH (NOLOCK) WHERE URR_ID = @URR_ID", false, 0, ref List_Dynamic_SP_Params);
+            }
+
+            List<SelectDropDownList> UserList = StaticPublicObjects.ado.Get_DropDownList_Result("SELECT code = UserID, name = UserID FROM [AAMH].[dbo].[tblUsers]");
+            List<SelectDropDownList> RT_List = StaticPublicObjects.ado.Get_DropDownList_Result("SELECT code = RT_ID, name = Report_Template_Name FROM [AAMH].[dbo].[T_Report_Templates]");
+
+            getModalDetail.getmodelsize = GetModalSize.modal_lg;
+            getModalDetail.modaltitle = (Modal_ID == 0 ? "Add New Rights" : "Edit Rights");
+            getModalDetail.modalfootercancelbuttonname = "Cancel";
+            getModalDetail.modalfootersuccessbuttonname = (Modal_ID == 0 ? "Add" : "Update");
+            getModalDetail.modalBodyTypeInfos = new List<ModalBodyTypeInfo>();
+
+            getModalDetail.onclickmodalsuccess = "AddOrEditReportRights()";
+
+            modalBodyTypeInfo = new ModalBodyTypeInfo();
+            modalBodyTypeInfo.ModelBodyType = GetModelBodyType.TRInput;
+            modalBodyTypeInfo.LabelName = "User Report Right ID";
+            modalBodyTypeInfo.IsRequired = true;
+            modalBodyTypeInfo.IsHidden = true;
+            modalBodyTypeInfo.GetInputTypeString = GetInputStringType.text;
+            modalBodyTypeInfo.PlaceHolder = "User Report Right ID";
+            modalBodyTypeInfo.id = "URR_ID";
+            if (ModalEdit.URR_ID > 0)
+            {
+                modalBodyTypeInfo.value = ModalEdit.URR_ID;
+            }
+            else
+            {
+                modalBodyTypeInfo.value = "";
+            }
+            modalBodyTypeInfo.ClassName = "form-control";
+            modalBodyTypeInfo.AttributeList = new List<AttributeList>
+            {
+                new AttributeList { Name = "readonly", Value = "readonly" }
+            };
+            if (ModalEdit.URR_ID > 0)
+                List_ModalBodyTypeInfo.Add(modalBodyTypeInfo);
+
+            modalBodyTypeInfo = new ModalBodyTypeInfo();
+            modalBodyTypeInfo.ModelBodyType = GetModelBodyType.TRselect;
+            modalBodyTypeInfo.LabelName = "User Name";
+            modalBodyTypeInfo.IsRequired = true;
+            modalBodyTypeInfo.GetInputTypeString = GetInputStringType.text;
+            modalBodyTypeInfo.id = "UserId";
+            if (ModalEdit.UserId != "")
+            {
+                modalBodyTypeInfo.IsSelectOption = true;
+                modalBodyTypeInfo.value = ModalEdit.UserId!;
+            }
+            else
+            {
+                modalBodyTypeInfo.value = "";
+            }
+            modalBodyTypeInfo.selectLists = UserList;
+            modalBodyTypeInfo.ClassName = "form-control";
+            modalBodyTypeInfo.AttributeList = new List<AttributeList>
+            {
+                new AttributeList(){Name = "onfocus", Value = "validate(this)"},
+                new AttributeList(){Name = "onkeydown", Value = "validate(this)"},
+                new AttributeList(){Name = "onchange", Value = "validate(this);"},
+                new AttributeList(){Name = "autocomplete", Value = "off"}
+            };
+            List_ModalBodyTypeInfo.Add(modalBodyTypeInfo);
+
+            modalBodyTypeInfo = new ModalBodyTypeInfo();
+            modalBodyTypeInfo.ModelBodyType = GetModelBodyType.TRselect;
+            modalBodyTypeInfo.LabelName = "Report";
+            modalBodyTypeInfo.IsRequired = true;
+            modalBodyTypeInfo.GetInputTypeString = GetInputStringType.text;
+            modalBodyTypeInfo.id = "RT_ID";
+            if (ModalEdit.RT_ID > 0)
+            {
+                modalBodyTypeInfo.IsSelectOption = true;
+                modalBodyTypeInfo.value = ModalEdit.RT_ID!;
+            }
+            else
+            {
+                modalBodyTypeInfo.value = "";
+            }
+            modalBodyTypeInfo.selectLists = RT_List;
+            modalBodyTypeInfo.ClassName = "form-control";
+            modalBodyTypeInfo.AttributeList = new List<AttributeList>
+            {
+                new AttributeList(){Name = "onfocus", Value = "validate(this)"},
+                new AttributeList(){Name = "onkeydown", Value = "validate(this)"},
+                new AttributeList(){Name = "onchange", Value = "validate(this)"},
+                new AttributeList(){Name = "autocomplete", Value = "off"}
+            };
+            List_ModalBodyTypeInfo.Add(modalBodyTypeInfo);
+
+            getModalDetail.modalBodyTypeInfos = List_ModalBodyTypeInfo;
+
+            HtmlString = ModalFunctions.GetModalWithBody(getModalDetail);
+            return HtmlString;
+        }
+
+        [HttpPost]
+        public IActionResult AddOrEdit_ReportRights([FromBody] P_UserReportRight_Response res)
+        {
+            P_ReturnMessage_Result response = StaticPublicObjects.ado.P_SP_MultiParm_Result("P_CP_AddOrEdit_Job", res, _PublicClaimObjects!.username, "");
+            if (response.ReturnCode == false)
+                StaticPublicObjects.logFile.ErrorLog(FunctionName: "AddOrEdit_ReportRights", SmallMessage: response.ReturnText!, Message: response.ReturnText!);
+            return Content(JsonConvert.SerializeObject(response));
+        }
+
+        [HttpPost]
+        public IActionResult Remove_ReportRights([FromBody] string Ery_URR_ID)
+        {
+            int URR_ID = Crypto.DecryptNumericToStringWithOutNull(Ery_URR_ID);
+            P_ReturnMessage_Result response = StaticPublicObjects.ado.P_SP_Remove_Generic_Result("T_User_Report_Rights", "URR_ID", URR_ID);
+            if (response.ReturnCode == false)
+                StaticPublicObjects.logFile.ErrorLog(FunctionName: "Remove_ReportRights", SmallMessage: response.ReturnText!, Message: response.ReturnText!);
+            return Content(JsonConvert.SerializeObject(response));
+        }
+        #endregion Rights 
 
 
         public IActionResult PdfHtml1()
