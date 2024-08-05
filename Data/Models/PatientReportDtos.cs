@@ -129,7 +129,7 @@ namespace Data.Models
 
     public class P_UserReportRight_Response
     {
-        public int URR_ID { get; set; }
+        public int URR_ID { get; set; } = 0;
         public string? UserId { get; set; }
         public int RT_ID { get; set; }
     }

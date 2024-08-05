@@ -73,7 +73,8 @@ namespace Services.PatientReportServices
                 else
                 {
                     List<Dynamic_SP_Params> _parms = new List<Dynamic_SP_Params>();
-                    objRT = Get_DropdownHtmlStringList("SELECT code = RT_ID, [name] = Report_Template_Name FROM [dbo].[T_Report_Templates] WITH (NOLOCK) WHERE IsActive = 1");
+                    _parms.Add(new Dynamic_SP_Params { ParameterName = "UserId", Val = _PublicClaimObjects!.username });
+                    objRT = Get_DropdownHtmlStringList("SELECT code = RT_ID, [name] = Report_Template_Name FROM [dbo].[T_Report_Templates] rt WITH (NOLOCK) WHERE IsActive = 1 AND Exists(SELECT 1 FROM [dbo].[T_User_Report_Rights] WHERE RT_ID =  rt.RT_ID AND UserId = @UserId)", _parms);
                 }
                 return objRT;
             }

@@ -512,9 +512,21 @@ namespace CodeToCure_MVC.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddOrEdit_ReportRights([FromBody] P_UserReportRight_Response res)
+        public IActionResult AddOrEdit_ReportRights([FromBody] JObject jobj)
         {
-            P_ReturnMessage_Result response = StaticPublicObjects.ado.P_SP_MultiParm_Result("P_CP_AddOrEdit_Job", res, _PublicClaimObjects!.username, "");
+            int URR_ID = 0;
+            JToken urrIdToken = jobj["URR_ID"];
+            if (urrIdToken != null && int.TryParse(urrIdToken.ToString(), out int parsedValue))
+            {
+                URR_ID = parsedValue;
+            }
+            string UserId = jobj["UserId"]?.ToString()!;
+            int RT_ID = jobj["RT_ID"]?.ToObject<int>() ?? 0;
+            P_UserReportRight_Response res = new P_UserReportRight_Response();
+            res.URR_ID = URR_ID;
+            res.UserId = UserId;
+            res.RT_ID = RT_ID;
+            P_ReturnMessage_Result response = StaticPublicObjects.ado.P_SP_MultiParm_Result("P_AddOrEdit_UserReportRights", res, _PublicClaimObjects!.username, "");
             if (response.ReturnCode == false)
                 StaticPublicObjects.logFile.ErrorLog(FunctionName: "AddOrEdit_ReportRights", SmallMessage: response.ReturnText!, Message: response.ReturnText!);
             return Content(JsonConvert.SerializeObject(response));

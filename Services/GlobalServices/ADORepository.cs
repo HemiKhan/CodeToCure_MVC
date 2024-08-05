@@ -2692,9 +2692,9 @@ namespace Services.GlobalServices
                 }
             }
             dynamic_SP_Params_list.Add(new Dynamic_SP_Params { ParameterName = "Username", Val = USERNAME });
-            dynamic_SP_Params_list.Add(new Dynamic_SP_Params { ParameterName = "IPAddress", Val = IP });
+            //dynamic_SP_Params_list.Add(new Dynamic_SP_Params { ParameterName = "IPAddress", Val = IP });
 
-            DataRow DR = ExecuteStoreProcedureDR(Query, ref dynamic_SP_Params_list);
+            DataRow DR = ExecuteStoreProcedureDR(Query, ref dynamic_SP_Params_list)!;
             result.ReturnCode = Convert.ToBoolean(DR["Return_Code"]);
             result.ReturnText = DR["Return_Text"].ToString();
             return result;
@@ -2718,7 +2718,7 @@ namespace Services.GlobalServices
             dynamic_SP_Params_list.Add(new Dynamic_SP_Params { ParameterName = "Username", Val = USERNAME });
             dynamic_SP_Params_list.Add(new Dynamic_SP_Params { ParameterName = "IPAddress", Val = IP });
 
-            DataRow DR = ExecuteStoreProcedureDR(Query, ref dynamic_SP_Params_list);
+            DataRow DR = ExecuteStoreProcedureDR(Query, ref dynamic_SP_Params_list)!;
             result.ReturnCode = Convert.ToBoolean(DR["Return_Code"]);
             result.ReturnText = DR["Return_Text"].ToString();
             if (Information.IsDBNull(DR[ObjFieldName]) == false)
